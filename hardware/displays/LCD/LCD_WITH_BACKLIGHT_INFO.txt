@@ -1,0 +1,2 @@
+usually there´s two extra pins on the HD44780 LCD modules with backlighting built in
+no changes need to be made, seems like most HD44780 modules have two extra pins (pin 15 and 16) for backlighting power

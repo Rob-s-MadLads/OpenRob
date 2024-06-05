@@ -1,0 +1,30 @@
+[MICROCONTROLLERS]
+
+Raspberry Pi4 4Gb (2gb and possibly 1gb version are also fine)
+
+[SERVOS]
+standard SG90 servo
+
+[3DPRINTING]
+Ender-3 Pro
+PLA Filament
+
+[STORAGE]
+SDcard(for backups)
+M.2 SSD(as main drive to increase speed and stability drastically)
+M.2 to USB3 adapter(uses one USB slot on the RPi)
+
+[INPUTS]
+//vision
+standard PiCamera(connected with the ribbon cable to the RPi´s camera connection
+//audio
+small USB Microphone for audio recording
+
+[OUTPUTS]
+//audio
+small bluetooth speaker
+//optical
+small HD44780 8x2 LCD screen (for displaying eyes)
+LED diodes for LCD backlight (my LCD doesn´t have internal backlighting)
+
+ 

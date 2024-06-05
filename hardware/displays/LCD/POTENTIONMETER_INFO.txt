@@ -1,0 +1,4 @@
+the 8x2 LCD im using seem to be very very sensitive to the values of the potentiometer.
+either you´d need a diffrent ohm value or a pot with higher precision. possibly its just the rougher precision of mine that acts up!
+
+TLDR; CHECK AND PLAY AROUND WITH POTMETER BEFORE CUNCLUDING WIRING ERROR OR FAULTY SCREEN!!  
