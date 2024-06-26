@@ -1,5 +1,8 @@
 # OpenRob
- open sourced parts of the famous Rob2.0 project
+
+update 2024-Jun-26: OpenRob is now public
+
+open sourced parts of the famous Rob2.0 project
 
 hardware update: new STL design with cable supports and what not
 
