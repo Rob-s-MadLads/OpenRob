@@ -1,0 +1,2676 @@
+# -*- coding: utf-8 -*-
+import warnings
+import os
+warnings.filterwarnings("ignore")
+from pathlib import Path
+# Another way to ignore warnings at the OS level
+os.environ['PYTHONWARNINGS'] = 'ignore'
+# Filter all warnings that match 'DeprecationWarning' category and contain 'np.int' or 'np.float'
+warnings.filterwarnings('ignore', category=DeprecationWarning, message='.*np\.int.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning, message='.*np\.float.*')
+from elevenlabslib import *
+import pyrubberband as pyrb
+import soundfile as sf
+from pydub.effects import speedup
+import io
+import pydub
+from luma.core.interface.serial import i2c, spi, pcf8574
+from luma.core.interface.parallel import bitbang_6800
+from luma.core.render import canvas
+from luma.oled.device import sh1106
+from PIL import Image, ImageSequence, ImageFont
+import RPi.GPIO as GPIO
+import time
+from time import sleep
+import threading
+import gpiozero
+from gpiozero import Servo, Button
+import gpiozero
+import tkinter as tk
+import cv2
+import numpy as np
+np.seterr(all=None, divide=None, over=None, under=None, invalid=None)
+from pygame import mixer
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import random
+import openai
+# from gtts import gTTS
+import soundfile as sf
+import json
+from pydub import AudioSegment
+import pygame
+import pyaudio
+import keyboard
+import wave
+import busio
+from adafruit_ina219 import INA219
+import board
+import audioop
+from textblob import TextBlob
+from gpiozero import CPUTemperature
+import psutil
+import tempfile
+import face_recognition
+import cProfile
+import pstats
+from threading import Thread
+import sys
+import subprocess
+import speech_recognition as sr
+import sox
+from time import strftime
+import base64
+import requests
+import serial as serial2
+from vosk import Model, KaldiRecognizer
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QDesktopWidget
+from PyQt5.QtCore import QTimer, Qt
+from TikTokLive import TikTokLiveClient
+from TikTokLive.types.events import CommentEvent, ConnectEvent, GiftEvent
+import asyncio
+
+import asyncio
+import threading
+from TikTokLive import TikTokLiveClient
+from TikTokLive.types.events import CommentEvent, ConnectEvent
+
+
+# Global variables
+latest_comment = None
+new_comment_event = threading.Event()
+
+client: TikTokLiveClient = TikTokLiveClient(unique_id="@robgpt")
+
+def clean_text(text: str) -> str:
+    """
+    Remove non-UTF-8 characters from a string.
+    """
+    return text.encode('utf-8', 'ignore').decode('utf-8')
+
+
+@client.on("gift")
+async def on_connect(_: GiftEvent):
+    print("Received gift")
+    heart()
+    speak("thank you for the gift")
+    #sleep(1)
+    #reboot_eyes()
+    
+
+@client.on("connect")
+async def on_connect(_: ConnectEvent):
+    print("connect to live stream")
+    speak("connected to live stream")
+
+@client.on("comment")
+async def on_comment(event: CommentEvent):
+    global latest_comment
+    user_nickname = clean_text(event.user.nickname)
+    user_comment = clean_text(event.comment)
+    latest_comment = f"\nTikTok Chat:\n{user_nickname} said: {user_comment}\n"
+    # Signal that a new comment has been received
+    new_comment_event.set()
+
+def run_client():
+    print("awaiting connection:...")
+    asyncio.run(client.run())
+
+def start_tiktok_client():
+    threading.Thread(target=run_client, daemon=True).start()
+
+
+        
+
+
+
+
+
+
+
+def heyrob():
+    delay=60
+    close_time=time.time()+delay
+    model = Model("vosk-model-small-en-us-0.15")
+    #Model("Vosk_Swe/MODEL.15") # +
+    recognizer = KaldiRecognizer(model, 16000)
+
+    mic = pyaudio.PyAudio()
+    stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
+    stream.start_stream()
+
+    while True:
+        turn_on_color(blue_pin)
+        sleep(1)
+        turn_on_color(green_pin)
+        data = stream.read(4096)
+        if time.time()>close_time:
+            turn_on_color(red_pin)
+            print("returning to main")
+            main()
+        if recognizer.AcceptWaveform(data):
+            turn_on_color(blue_pin)
+            result_json = recognizer.Result()
+            result = json.loads(result_json)
+            text = result.get("text", "")
+            print(f"'{text}'")
+            if "hey rob" in text.lower():
+                turn_on_color(green_pin)
+                sleep(0.3)
+                break
+#             elif "Rob" in text.lower():
+#                 turn_on_color(green_pin)
+#                 sleep(0.3)
+#                 break
+            elif "rob" in text.lower():
+                turn_on_color(green_pin)
+                sleep(0.3)
+                break
+#             elif "rob" in text.lower():
+#                 turn_on_color(green_pin)
+#                 sleep(0.3)
+#                 break
+    
+def legsoff():
+    oh()
+    try:
+        ser = serial2.Serial('/dev/ttyACM0', 115200)
+        time.sleep(2)
+    except Exception as e:
+        print(e)
+        ser = serial2.Serial('/dev/ttyACM1', 115200)
+        # Wait for the connection to be established
+        time.sleep(2)
+    try:
+        ser.write("legs off".encode())
+    except Exception as e:
+        ser.close()
+        print(e)
+#     try:
+#         while True:
+#             # Read data from serial port
+#             if ser.in_waiting > 0:
+#                 line = ser.readline().decode('utf-8').rstrip()
+#                 print(line)
+#                 break
+#     except Exception as e:
+#         print(e)
+    finally:
+        ser.close()
+        print("legs off command done")
+        main()
+
+def sit():
+    oh()
+    try:
+        ser = serial2.Serial('/dev/ttyACM0', 115200)
+        time.sleep(2)
+    except Exception as e:
+        print(e)
+    try:
+        ser.write("sit".encode())
+    except Exception as e:
+        ser.close()
+        print(e)
+
+    finally:
+        #er.close()
+        print("sit command done")
+        main()
+
+
+def stand():
+    oh()
+    try:
+        ser = serial2.Serial('/dev/ttyACM0', 115200)
+        time.sleep(2)
+    except Exception as e:
+        print(e)
+
+    try:
+        ser.write("stand".encode())
+    except Exception as e:
+        ser.close()
+        print(e)
+    finally:
+        #ser.close()
+        print("stand command done")
+        main()
+    
+
+
+# # Old code with deprecated eps parameter
+# a = np.array([1.0, 2.0, 3.0])
+# b = np.array([1.1, 2.1, 3.1])
+# np.testing.assert_allclose(a, b, eps=4 * np.finfo(np.float).eps)
+# 
+# # Updated code with recommended rtol parameter
+# np.testing.assert_allclose(a, b, rtol=4 * np.finfo(np.float).eps)
+
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+mixer.init()
+mixer.pre_init(44100, 16, 2, 4096)
+mixer.set_num_channels(64)
+
+def ambient():
+    mixer.init()
+    startmusic="music.wav"
+    mixer.music.load(startmusic)
+    mixer.music.set_volume(0.3)
+    mixer.music.play(-1)
+    
+def boot_welcome():
+    mixer.music.load("bootwelcome.wav")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+
+#robot = gpiozero.Robot(left=(20, 21), right=(19,13))
+
+font = ImageFont.truetype('computer_7.ttf', 20)
+
+
+
+# substitute bitbang_6800(RS=7, E=8, PINS=[25,24,23,27]) below if using that interface
+serial = i2c(port=1, address=0x3C)
+# substitute ssd1331(...) or sh1106(...) below if using that device
+device = sh1106(serial)
+
+GPIO.setmode(GPIO.BCM)
+# Replace 'pin_number' with the actual pin number connected to DO
+pin_number = 26
+
+# Define the GPIO pins for each color
+blue_pin = 16
+green_pin = 20
+red_pin = 21
+# # Set up the GPIO pins as outputs
+GPIO.setup(blue_pin, GPIO.OUT)
+GPIO.setup(green_pin, GPIO.OUT)
+GPIO.setup(red_pin, GPIO.OUT)    
+
+
+# Set our input pin to be an input
+GPIO.setup(pin_number, GPIO.IN)
+GPIO.setup(6, GPIO.OUT)
+GPIO.setup(17, GPIO.OUT)
+# RELAY_PIN = GPIO.setup(22, GPIO.OUT)
+RELAY_PIN = 22
+GPIO.setup(RELAY_PIN, GPIO.OUT)
+GPIO.setup(19, GPIO.OUT)
+GPIO.setup(13, GPIO.OUT)
+GPIO.setup(5, GPIO.OUT)
+
+def arm1():
+    arm1 = GPIO.PWM(19, 50)
+    sleep(0.5)
+    arm1.start(0)
+    sleep(0.5)
+    arm1.ChangeDutyCycle(9)
+    sleep(0.5)
+    arm1.stop()
+    sleep(0.5)
+def arm2():
+    servo2 = GPIO.PWM(13, 50)
+    servo2.start(0)
+    sleep(0.5)
+    servo2.ChangeDutyCycle(3)
+    sleep(0.5)
+    servo2.stop()
+
+def arm3():
+    servo2 = GPIO.PWM(5, 50)
+    servo2.start(0)
+    sleep(0.5)
+    servo2.ChangeDutyCycle(12)
+    sleep(0.5)
+    servo2.stop()
+def waves():
+    arm3 = GPIO.PWM(5, 50)
+    arm3.start(0)
+    for i in range(2):
+        arm3.ChangeDutyCycle(12)
+        sleep(0.1)
+        arm3.ChangeDutyCycle(9)
+        sleep(0.2)
+        arm3.ChangeDutyCycle(12)
+        sleep(0.1)
+    arm3.stop()
+def demoarms():
+    head_up()
+    whatthefuck()
+    head_down()
+    arm1()
+    arm2()
+    arm3()
+    waves()
+    head_up()
+    armthank()
+    main()
+
+
+# GPIO.PWM(6, 50)
+# GPIO.PWM(17, 50)
+
+
+# Set GPIO pin numbers (change these to the appropriate pins)
+TRIG_PIN = 27
+ECHO_PIN = 18
+
+# Function to turn on a specific color and turn off others
+def turn_on_color(color_pin):
+    GPIO.output(blue_pin, GPIO.LOW)
+    GPIO.output(green_pin, GPIO.LOW)
+    GPIO.output(red_pin, GPIO.LOW)
+    GPIO.output(color_pin, GPIO.HIGH)
+
+# Function to turn off all colors
+def turn_off_all():
+    GPIO.output(blue_pin, GPIO.LOW)
+    GPIO.output(green_pin, GPIO.LOW)
+    GPIO.output(red_pin, GPIO.LOW)
+
+def ledblink():
+    print("blinking")
+    while True:
+        turn_on_color(red_pin)
+        sleep(1)
+        turn_on_color(green_pin)
+        sleep(1)
+    if GPIO.input(pin_number):
+            print('Touch Detected!')
+            turn_on_color(blue_pin)
+
+
+def touch():
+    
+    head_mid()
+    turn_on_color(green_pin)
+    funcs = [heyrob, slow_down, slow_up, oh, face_rec, vision, reboot_eyes, head_up, head_mid] 
+    random_func = random.choice(funcs)
+    delay=600
+    close_time=time.time()+delay
+    print("touch head")
+    while True:
+        if time.time()>close_time:
+            turn_on_color(red_pin)
+            print("random func main")
+            random_func()
+            main()
+            #break
+        # If the button is pressed
+        elif GPIO.input(pin_number):
+            print('Touch Detected!')
+            turn_on_color(blue_pin)
+            head_up()
+            break
+
+    #touch()
+ 
+
+def armthank():
+    mixer.init()
+    mixer.music.load("armthank.wav")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    sleep(3)
+    main()
+
+def whatthefuck():
+    mixer.init()
+    mixer.music.load('whattefuck.wav')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+
+def shutdown():
+    mixer.init()
+    mixer.music.load('shutdown.wav')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+
+def think():
+    mixer.init()
+    mixer.music.load('think.wav')
+#    mixer.music.set_volume(0.3)
+    mixer.music.play()
+    
+def thinkbell():
+    while True:
+        mixer.init()
+        mixer.music.load('bell.mp3')
+    #    mixer.music.set_volume(0.3)
+        mixer.music.play(1)
+        while mixer.music.get_busy:
+            sleep(1)
+            pass
+        mixer.quit()
+        break
+    
+
+
+def wake_sound():
+    mixer.init()
+    mixer.music.load('Tada.mp3')
+    mixer.music.set_volume(0.5)
+    mixer.music.play()
+    
+def Oh_sound():
+    mixer.init()
+    mixer.music.load('Oh.wav')
+    mixer.music.set_volume(0.9)
+    sleep(1)
+    mixer.music.play()
+def boot_mac():
+    mixer.init()
+    mixer.music.load('boot_mac.mp3')
+    mixer.music.set_volume(0.8)
+    mixer.music.play()
+    
+    
+def Boot_sound():
+    mixer.init()
+    mixer.music.load('Boot.wav')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+
+def v_happy_sound():
+    mixer.init()
+    mixer.music.load('Very_happy.wav')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+def where_you():
+    mixer.init()
+    mixer.music.load('where.mp3')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy:
+        pass
+        break
+def there_you():
+    mixer.init()
+    mixer.music.load('there.mp3')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy:
+        pass
+        break
+def a():
+    mixer.init()
+    mixer.music.load('a.mp3')
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    
+
+
+def cleanup_display():
+    with canvas(device) as draw:
+        draw.rectangle(device.bounding_box, fill="black")
+#cleanup_display()
+
+def eyes_still():
+        image = Image.open("eyes_still.png")
+        # Resize image to the display size
+        image = image.resize((128, 64), Image.LANCZOS)
+        # Convert image to a 1-bit format
+        image = image.convert("1")
+        device.display(image)
+
+def heart():
+    image = Image.open("Heart.png")
+    # Resize image to the display size
+    image = image.resize((128, 64), Image.LANCZOS)
+    # Convert image to a 1-bit format
+    image = image.convert("1")
+    device.display(image)
+    sleep(5)
+    print("thank you for the gift")
+    tfm.build_file("ttsoutgift.mp3", "ttsout.wav")
+    tfm.build_file("ttsout.mp3", "ttsout.wav")
+    mixer.music.load("ttsout.wav")
+    mixer.music.set_volume(0.3)
+    mixer.music.play(1)
+    while mixer.music.get_busy:
+        pass
+    reboot_eyes()
+
+
+def eyes_blink():
+        image = Image.open("blinking_eyes.png")
+        # Resize image to the display size
+        image = image.resize((128, 64), Image.LANCZOS)
+        # Convert image to a 1-bit format
+        image = image.convert("1")
+        device.display(image)
+def eyes_left():
+        image = Image.open("eyes_still_left.png")
+        # Resize image to the display size
+        image = image.resize((128, 64), Image.LANCZOS)
+        # Convert image to a 1-bit format
+        image = image.convert("1")
+        device.display(image)
+
+def eyes_happy():
+        image = Image.open("happy_eyes.png")
+        # Resize image to the display size
+        image = image.resize((128, 64), Image.LANCZOS)
+        # Convert image to a 1-bit format
+        image = image.convert("1")
+        device.display(image)
+        sleep(1)
+def eyes_sad():
+        image = Image.open("eyes_sad.png")
+        # Resize image to the display size
+        image = image.resize((128, 64), Image.LANCZOS)
+        # Convert image to a 1-bit format
+        image = image.convert("1")
+        device.display(image)
+        
+def eyes_right():
+    try:
+        image = Image.open("eyes_still_right.png")
+        image = image.resize((128, 64), Image.LANCZOS)
+        image = image.convert("1")
+        device.display(image)
+    except OSError as e:
+        print(f"Rob had a stroke!,{e} rebooting eyes")
+        eye_stroke()
+        stop_thread.clear()
+        stop_event = threading.Event()
+        thread2 = threading.Thread(target=loop_eyes)
+        thread2.daemon = True
+        thread2.start()
+        
+
+def Boot_eyes():
+    image = Image.open("Boot2.PNG")
+    image = image.resize((128, 64), Image.LANCZOS)
+    image = image.convert("1")
+    device.display(image)
+
+def robos():
+    image = Image.open("robos.png")
+    image = image.resize((128, 64), Image.LANCZOS)
+    image = image.convert("1")
+    device.display(image)
+    
+
+def head_down():
+    servo2 = GPIO.PWM(17, 50)
+    servo2.start(5)
+    sleep(0.2)
+    servo2.ChangeDutyCycle(6)
+    sleep(0.5)
+    servo2.stop()
+def head_up():
+    servo2 = GPIO.PWM(17, 50)
+    servo2.start(0)
+    sleep(0.1)
+    servo2.ChangeDutyCycle(2.5)
+    sleep(0.5)
+    servo2.stop()
+def head_mid():
+    servo2 = GPIO.PWM(17, 50)
+    servo2.start(0)
+    sleep(0.5)
+    servo2.ChangeDutyCycle(2)
+    sleep(0.5)
+    servo2.stop()
+def turn_mid():
+    servo1 = GPIO.PWM(6, 50)
+    servo1.start(8.4)
+    sleep(0.5)
+    servo1.ChangeDutyCycle(8.4)
+    sleep(0.5)
+    servo1.stop()
+def turn_left():
+    servo1 = GPIO.PWM(6, 50)
+    servo1.start(12)
+    sleep(0.5)
+    servo1.ChangeDutyCycle(12)
+    sleep(0.5)
+    servo1.stop()
+def turn_right():
+    servo1 = GPIO.PWM(6, 50)
+    servo1.start(5.5)
+    sleep(0.5)
+    servo1.ChangeDutyCycle(5.5)
+    sleep(0.5)
+    servo1.stop()
+    
+def slow_up():
+    while True: 
+        servo2 = GPIO.PWM(17, 50)
+        duty_cycle = 6
+        servo2.start(duty_cycle)
+        for i in range(50):
+            duty_cycle -= 0.04
+            servo2.ChangeDutyCycle(duty_cycle)
+            time.sleep(0.02)
+        servo2.stop(0.5)
+        sleep(0.5)
+        break
+    
+def slow_up_mid():
+    servo2 = GPIO.PWM(17, 50)
+    duty_cycle = 10
+    servo2.start(duty_cycle)
+    for i in range(100):
+        duty_cycle -= 0.02
+        servo2.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.02)
+    servo2.stop()
+   
+
+def slow_down():
+    servo2 = GPIO.PWM(17, 50)
+    duty_cycle = 4
+    servo2.start(duty_cycle)
+    for i in range(115):
+        duty_cycle += 0.04
+        servo2.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.02)
+    servo2.stop()
+    time.sleep(0.5)  
+def slow_left():
+    servo1 = GPIO.PWM(6, 50)
+    duty_cycle = 12
+    servo1.start(duty_cycle)
+    for i in range(30):
+        duty_cycle -= 0.1
+        servo1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.5)
+    servo1.stop()
+    time.sleep(0.5)
+def slow_right():
+    servo1 = GPIO.PWM(6, 50)
+    duty_cycle = 6
+    servo1.start(duty_cycle)
+    for i in range(60):
+        duty_cycle += 0.1
+        servo1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
+    servo1.stop()
+    time.sleep(0.5)
+def slow_right_mid():
+    servo1 = GPIO.PWM(6, 50)
+    duty_cycle = 12
+    servo1.start(duty_cycle)
+    for i in range(30):
+        duty_cycle -= 0.1
+        servo1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
+    servo1.stop()
+    time.sleep(0.5)
+
+def slow_down2():
+    servo3 = GPIO.PWM(17, 50)
+    duty_cycle = 2
+    servo3.start(duty_cycle)
+    for i in range(12):
+        duty_cycle += 0.4
+        servo3.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.02)
+    servo3.stop()
+    time.sleep(0.5)
+    
+def slow_up2():
+    servo3 = GPIO.PWM(17, 50)
+    duty_cycle = 9
+    servo3.start(duty_cycle)
+    for i in range(14):
+        duty_cycle -= 0.4
+        servo3.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.02)
+    servo3.stop()
+    sleep(0.5)
+    
+    
+
+stop_move = threading.Event()
+stop_thread = threading.Event()    
+
+def slow_up_down():
+    while True:
+        slow_up2()
+        slow_down2()
+        if stop_thread.is_set():
+            break
+
+
+
+def wake_up():
+    Boot_sound()
+    sleep(1)
+    Boot_eyes()
+    sleep(1)
+    head_mid()
+    sleep(1)
+    cleanup_display()
+    sleep(0.5)
+    Boot_eyes()
+    turn_mid()
+    sleep(7)
+    sleep(0.1)
+    eyes_blink()
+    sleep(0.1)
+    wake_sound()
+    sleep(1)
+    eyes_still()
+    head_up()
+    
+def calculate_percentage(value):
+    lower_bound = 14.4
+    upper_bound = 16.8
+    if value < lower_bound:
+        return 0.0
+    elif value > upper_bound:
+        return 100.0
+    else:
+        return ((value - lower_bound) / (upper_bound - lower_bound)) * 100
+
+battery_capacity_mAh = 1550  # Battery capacity in mAh
+
+def calculate_time_remaining(current_draw_mA, current_mAh_left):
+    if current_draw_mA > 0:
+        hours_remaining = current_mAh_left / current_draw_mA
+        return hours_remaining  # Time remaining in hours
+    else:
+        return float('inf')  # Infinite time remaining if no current draw
+
+def display_percentage():
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1
+    bus_voltage = ina219.bus_voltage
+    percentage = calculate_percentage(bus_voltage)
+    executed_once = False
+    while True:
+        with canvas(device) as draw:
+            draw.text((10, 1), "batterinivå:", font=font, fill="white")
+            draw.text((40, 20), f"{percentage:.1f}%", font=font, fill="white")
+        if not executed_once:
+            speak(f"batterinivå {bus_voltage:.1f}. just {percentage:.0f}procent kvar. typ.")
+            
+            executed_once = True
+        if GPIO.input(pin_number):
+            break
+
+def boot_batt():
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1
+    bus_voltage = ina219.bus_voltage
+    percentage = calculate_percentage(bus_voltage)
+    with canvas(device) as draw:
+        draw.text((10, 1), "   battery:", font=font, fill="white")
+        draw.text((40, 20), f"{percentage:.1f}%", font=font, fill="white")
+        draw.text((40, 40), f"{bus_voltage:.1f}v", font=font, fill="white")
+
+def boot_batt2():
+    mixer.init()
+    stop_event = threading.Event()
+    thread2 = threading.Thread(target=loop_eyes)
+    thread2.daemon = True
+    stop_thread.set()
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1
+    bus_voltage = ina219.bus_voltage
+    percentage = calculate_percentage(bus_voltage)
+    speak(f"battery level: {bus_voltage:.1f}volts. around {percentage:.0f}procent kvar. typ.")
+    with canvas(device) as draw:
+        draw.text((10, 1), "batterinivå:", font=font, fill="white")
+        draw.text((40, 20), f"{percentage:.1f}%", font=font, fill="white")
+        sleep(2)
+        
+    thread2.start()
+
+
+def loop_eyes():
+    low_voltage_threshold = 14.50
+    low_voltage_critical = 13.9
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1
+    executed_once = False
+    while True:
+        try:
+            bus_voltage = ina219.bus_voltage
+            percentage = calculate_percentage(bus_voltage)
+            if bus_voltage < low_voltage_threshold and not executed_once:
+                with canvas(device) as draw:
+                    draw.text((10, 1), "battery at:", font=font, fill="white")
+                    draw.text((40, 20), f"{percentage:.1f}%", font=font, fill="white")
+                inputs = f"battery at {bus_voltage:.2f}volts. ca {percentage:.0f}percent left"
+                
+                executed_once = True
+            mixer.init()
+            if bus_voltage < low_voltage_critical:
+                stop_thread.set()
+                with canvas(device) as draw:
+                    draw.text((5, 2), "BATTERY CRITICAL", font=font, fill="white")
+                    draw.text((40, 15), f"{bus_voltage:.2f}", font=font, fill="white")
+                speak("BATTERY CRITICAL, EMERGENCY SHUTDOWN")                
+                with canvas(device) as draw:
+                    draw.text((10, 1), "batterinivå:", font=font, fill="white")
+                    draw.text((40, 20), f"{percentage:.1f}%", font=font, fill="white")
+                turn_off_low()
+                os.system("sudo shutdown -h now")
+                break
+                      
+
+            if stop_thread.is_set():
+                break
+                        # -r = reboot, -h = shutdown
+    #                 sys.exit("sudo shutdown -h now")
+    #                 return loop_eyes()
+            else:
+                sleep(0.5)
+                eyes_blink()
+                sleep(0.5)
+                eyes_still()
+                sleep(0.1)
+                eyes_blink()
+                sleep(0.3)
+                eyes_still()
+                sleep(0.5)
+                eyes_left()
+                sleep(1)
+                eyes_blink()
+                sleep(0.1)
+                eyes_left()
+                sleep(1)
+                eyes_blink()
+                sleep(0.1)
+                eyes_still()
+                sleep(1)
+                eyes_blink()
+                sleep(0.1)
+                eyes_still()
+                sleep(1)
+                time.sleep(1)
+                eyes_blink()
+                time.sleep(0.1)
+                eyes_still()
+                sleep(1)
+                eyes_left()
+                sleep(1.5)
+                eyes_right()
+                sleep(2)
+                eyes_blink()
+                sleep(0.1)
+        except OSError as e:
+            print(f"Rob had a stroke!, rebooting eyes")
+            stop_thread.clear()
+            eye_stroke()
+            sleep(1)
+            stop_event = threading.Event()
+            thread2 = threading.Thread(target=loop_eyes)
+            thread2.daemon = True
+            thread2.start()
+            
+def eye_stroke():
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1
+    with canvas(device) as draw:
+        draw.text((5, 2), "Rob fick stro¡ke", font=font, fill="white")
+        draw.text((40, 15), "ögat, Startar om", font=font, fill="white")
+    
+    
+
+def sad_sound():
+    mixer.init()
+    mixer.music.load("Sad1.wav")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+        
+        
+            
+
+
+            
+        
+def oh():
+    mixer.init()
+    mixer.music.load("oh.mp3")
+    mixer.music.set_volume(0.5)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+#     mixer.quit()
+
+def va():
+    mixer.init()
+    mixer.music.load("va.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+    
+def hmm():
+    mixer.init()
+    mixer.music.load("hmm.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+
+
+    
+def voltage():
+    # Initialize I2C bus
+    i2c = busio.I2C(board.SCL, board.SDA)
+    # Initialize INA219 with the I2C bus and default configuration
+    ina219 = INA219(i2c)
+    # Set bus ADC resolution to 12 bits
+    ina219.bus_adc_resolution = 0x3  # Corresponds to 12-bit resolution
+    # Set the bus voltage range to 16V
+    ina219.bus_voltage_range = 0x1  # Corresponds to 16V range
+    # Measure and print the bus voltage every second
+    while True:
+        bus_voltage = ina219.bus_voltage  # Read bus voltage
+        print("Voltage: {:.2f} V".format(bus_voltage))
+        time.sleep(1)
+        break
+
+def get_cpu_usage():
+    return psutil.cpu_percent()
+
+def get_ram_usage():
+    ram = psutil.virtual_memory()
+    return ram.percent
+cpu_usage = get_cpu_usage()
+ram_usage = get_ram_usage()
+current_time = time.strftime("%H:%M", time.localtime())
+
+
+def low_voltage():
+    mixer.init()
+    low_voltage_threshold = 12.9
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ina219 = INA219(i2c)
+    ina219.bus_adc_resolution = 0x3
+    ina219.bus_voltage_range = 0x1 
+    bus_voltage = ina219.bus_voltage
+    while True:
+        if bus_voltage < low_voltage_threshold:
+            with canvas(device) as draw:
+                draw.text((5, 1), "LOW VOLTAGE", font=font, fill="white")
+                draw.text((40, 20), str(bus_voltage), font=font, fill="white")
+            inputs = "Låg batterinivå"
+            tts = gTTS(text = inputs, lang="sv", slow=False)
+            filename = "save.mp3"
+            tts.save(filename)
+            sound = AudioSegment.from_file(filename, format="mp3")
+            octaves = 0.5
+            new_sample_rate = int(sound.frame_rate * (2 ** octaves))
+            hipitch_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+            hipitch_sound = hipitch_sound.set_frame_rate(44100)
+            #export / save pitch changed sound
+            hipitch_sound.export("low voltage.mp3", format="mp3")
+            mixer.music.load("low voltage.mp3")
+            mixer.music.set_volume(1)
+            mixer.music.play()
+            while mixer.music.get_busy():
+                pass
+            mixer.music.load("Sad1.wav")
+            mixer.music.set_volume(1)
+            mixer.music.play()
+            while mixer.music.get_busy():
+                pass
+
+    
+def volt_and_cpu():
+    cpu = CPUTemperature()
+    font = ImageFont.truetype('computer_7.ttf', 10)
+    # Initialize I2C bus
+    i2c = busio.I2C(board.SCL, board.SDA)
+    # Initialize INA219 with the I2C bus and default configuration
+    ina219 = INA219(i2c)
+    # Set bus ADC resolution to 12 bits
+    ina219.bus_adc_resolution = 0x3  # Corresponds to 12-bit resolution
+    # Set the bus voltage range to 16V
+    ina219.bus_voltage_range = 0x1  # Corresponds to 16V range
+    # Measure and print the bus voltage every second
+    bus_voltage = ina219.bus_voltage
+    cpu_usage = get_cpu_usage()
+    ram_usage = get_ram_usage()
+    current_time = time.strftime("%H:%M", time.localtime())
+    with canvas(device) as draw:
+            draw.text((1, 1),"CPU-T:", font=font, fill="white")
+            draw.text((32, 1), str(cpu.temperature), font=font, fill="white")
+    time.sleep(1)
+    with canvas(device) as draw:
+        draw.text((1, 1),"CPU-T:", font=font, fill="white")
+        draw.text((32, 1), str(cpu.temperature), font=font, fill="white")
+        draw.text((1, 13),"CPU-use:", font=font, fill="white")
+        draw.text((42, 15), str(cpu_usage), font=font, fill="white")
+        draw.text((57, 15),"%", font=font, fill="white")
+    time.sleep(1)
+    with canvas(device) as draw:
+        draw.text((1, 1),"CPU-T:", font=font, fill="white")
+        draw.text((32, 1), str(cpu.temperature), font=font, fill="white")
+        draw.text((1, 13),"CPU-use:", font=font, fill="white")
+        draw.text((42, 15), str(cpu_usage), font=font, fill="white")
+        draw.text((57, 15),"%", font=font, fill="white")
+        draw.text((1, 25),"RAM:", font=font, fill="white")
+        draw.text((25, 25), str(ram_usage), font=font, fill="white")
+        draw.text((42, 25),"%:", font=font, fill="white")
+    time.sleep(1)
+    with canvas(device) as draw:
+        draw.text((1, 1),"CPU-T:", font=font, fill="white")
+        draw.text((32, 1), str(cpu.temperature), font=font, fill="white")
+        draw.text((1, 13),"CPU-use:", font=font, fill="white")
+        draw.text((42, 15), str(cpu_usage), font=font, fill="white")
+        draw.text((57, 15),"%", font=font, fill="white")
+        draw.text((1, 25),"RAM:", font=font, fill="white")
+        draw.text((25, 25), str(ram_usage), font=font, fill="white")
+        draw.text((42, 25),"%:", font=font, fill="white")
+        draw.text((1, 35),"BATT:", font=font, fill="white")
+        draw.text((27, 35), str(bus_voltage), font=font, fill="white")
+    time.sleep(2.5)
+
+    
+    
+
+
+
+# camera = PiCamera()
+
+def face_rec():
+    print("booting face_rec")
+    head_up()
+    delay=10 ###delay
+    close_time=time.time()+delay
+    camera = PiCamera()
+    camera.brightness = 50
+    camera.resolution = (300, 300)
+    camera.framerate = 30
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+    camera.rotation = -90
+    
+    face_cascade = cv2.CascadeClassifier('frontalface_default.xml')
+    time.sleep(1)
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        image = frame.array
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
+        
+        if len(faces) > 0:
+            for (x, y, w, h) in faces:
+                cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                cv2.putText(image, "Match", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                eyes_happy()
+                oh()
+                rawCapture.truncate(0)
+                cv2.destroyAllWindows()
+                camera.close()
+                vision()
+
+        cv2.imshow("face", image)
+        key = cv2.waitKey(1) & 0xFF
+        rawCapture.truncate(0)
+        if time.time()>close_time:
+            rawCapture.truncate(0)
+            cv2.destroyAllWindows()
+            camera.close()
+            break
+        if GPIO.input(pin_number):
+            rawCapture.truncate(0)
+            cv2.destroyAllWindows()
+            camera.close()
+            break
+    
+    rawCapture.truncate(0)
+    cv2.destroyAllWindows()
+    camera.close()
+def papa():
+    mixer.music.load("papa.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+    
+def face_papa():
+    print("booting face_papa")
+    head_up()
+    eyes_sad()
+    sleep(1)
+    sad_sound()
+    papa()
+    delay=30 ###delay
+    close_time=time.time()+delay
+    camera.brightness = 50
+    camera.resolution = (300, 300)
+    camera.framerate = 30
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+    camera.rotation = -90
+    
+    face_cascade = cv2.CascadeClassifier("papazface.xml")
+    time.sleep(1)
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        image = frame.array
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
+        
+        if len(faces) > 0:
+            for (x, y, w, h) in faces:
+                cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                cv2.putText(image, "PAPA", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                eyes_happy()
+                Oh_sound()
+                sleep(1)
+                papa()
+                sleep(1)
+                break
+#                 
+#                 v_happy_sound()
+
+        cv2.imshow("face", image)
+        key = cv2.waitKey(1) & 0xFF
+        rawCapture.truncate(0)
+        if key == ord("q"):
+            break
+        if time.time()>close_time:
+            
+            break
+        if GPIO.input(pin_number):
+            break
+            
+            
+    rawCapture.truncate(0)
+    cv2.destroyAllWindows()   
+def face_look():
+    head_up()
+    delay=10 ###delay
+    close_time=time.time()+delay
+    camera.resolution = (300, 300)
+    camera.framerate = 30
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+    camera.rotation = -90
+    
+    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    time.sleep(1)
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        image = frame.array
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
+        
+        if len(faces) > 0:
+#             for (x, y, w, h) in faces:
+            eyes_happy()
+            oh()
+            break
+
+#             head_mid()
+#             sleep(1)
+#             intro()
+#             break
+
+        cv2.imshow("face", image)
+        key = cv2.waitKey(1) & 0xFF
+        rawCapture.truncate(0)
+        if time.time()>close_time:
+            stop_move.set()
+            break
+        if GPIO.input(pin_number):
+            stop_move.set()
+            break
+    rawCapture.truncate(0)
+    cv2.destroyAllWindows()
+    
+
+def track_laser(frame):
+    # Convert the frame to HSV color space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    lower_color = np.array([43, 181, 68])
+    upper_color = np.array([180,255, 255])
+    
+    mask = cv2.inRange(hsv, lower_color, upper_color)
+
+    moments = cv2.moments(mask)
+    
+#   cv2.imshow("HSV Image", hsv)
+#     cv2.imshow("mask",  mask)
+    
+
+
+    if moments['m00'] > 0:
+        # Calculate the center of the object
+        cx = int(moments['m10']/moments['m00'])
+        cy = int(moments['m01']/moments['m00'])
+
+        # Draw a circle at the center of the object
+        cv2.circle(frame, (cx, cy), 10, (0, 0, 255), -1)
+
+        # Move the robot towards the center of the ball
+        if cx > frame.shape[1]//2 + 50:
+            # Move the robot to the right
+            # Replace with your own code to control the robot
+            robot.right(0.3)
+        elif cx < frame.shape[1]//2 - 50:
+            # Move the robot to the left
+            # Replace with your own code to control the robot
+            robot.left(0.3)
+        elif cx >= frame.shape[1]//2 - 50 and cx <= frame.shape[1]//2 + 50:
+            robot.forward(0.3)
+            
+
+    return frame
+
+
+# thread2 = threading.Thread(target=loop_eyes)
+# thread2.daemon = True
+# thread1 = threading.Thread(target=Idle_movement)
+# thread1.daemon = True
+
+
+def laser_follow():
+    head_up()
+    sleep(0.5)
+    eyes_happy()
+    sleep(0.5)
+    head_down()
+    #delay
+    delay=1000
+    close_time=time.time()+delay
+    #camera settings
+    camera.brightness = 30
+    camera.resolution = (300, 300)
+    camera.iso = 70
+    camera.framerate = 30
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+    camera.rotation = -90
+    
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        image = frame.array
+        image = track_laser(image)
+        show = cv2.imshow("laser", image)
+        key = cv2.waitKey(1) & 0xFF
+        rawCapture.truncate(0)
+        if key == ord("q"):
+            stop_move.clear()
+            stop_event = threading.Event()
+            thread1 = threading.Thread(target=Idle_movement)
+            thread1.daemon = True
+            thread1.start()
+            rawCapture.truncate(0)
+            cv2.destroyAllWindows()
+            main()
+        if time.time()>close_time:
+            stop_move.clear()
+            stop_event = threading.Event()
+            thread1 = threading.Thread(target=Idle_movement)
+            thread1.daemon = True
+            thread1.start()
+            rawCapture.truncate(0)
+            cv2.destroyAllWindows()
+            main()
+        if GPIO.input(pin_number):
+            stats()
+    rawCapture.truncate(0)
+    cv2.destroyAllWindows()
+    head_mid()
+    face_look()
+
+def follow_person():
+    head_up()
+    camera.rotation = -90
+    camera.resolution = (300, 300)
+    camera.framerate = 30
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+
+    # Load the body detection Haar cascade
+    body_cascade = cv2.CascadeClassifier('upperbody.xml')
+    body_cascade = cv2.CascadeClassifier("lowerbody.xml")
+    body_cascade = cv2.CascadeClassifier("smile.xml")
+
+    def detect_and_move(frame):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        bodies = body_cascade.detectMultiScale(gray, 1.1, 5)
+        
+        max_area = 0
+        max_body = None
+
+        for (x, y, w, h) in bodies:
+            cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            area = w * h
+            if area > max_area:
+                max_area = area
+                max_body = (x, y, w, h)
+        
+        if max_body is not None:
+            x, y, w, h = max_body
+            center_x = x + w // 2
+            center_y = y + h // 2
+
+            # Define frame borders for reference
+            left_border = frame.shape[1] * 0.25
+            right_border = frame.shape[1] * 0.75
+
+            if center_x < left_border:
+                robot.left(0.2)
+            elif center_x > right_border:
+                robot.right(0.2)
+            else:
+                robot.forward(0.2)
+        else:
+            return frame
+            
+
+    
+    # Main loop
+    for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=True):
+        image = frame.array
+        detect_and_move(image)
+        # Show the resulting frame
+        cv2.imshow('Robot Follow', image)
+        # Clear the stream for the next frame
+        rawCapture.truncate(0)
+        # Break the loop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            
+            break
+
+    cv2.destroyAllWindows()
+def face_look_multi():
+    delay = 10  # Delay
+    close_time = time.time() + delay
+    camera = PiCamera()
+    camera.resolution = (300, 300)
+    camera.framerate = 15
+    camera.rotation = -90
+
+    rawCapture = PiRGBArray(camera, size=(300, 300))
+
+    # Define your classifiers
+    face_cascade = cv2.CascadeClassifier('frontalface_default.xml')
+    custom_face_cascade = cv2.CascadeClassifier('papa.xml')
+    time.sleep(2)
+    executed_once = False
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        image = frame.array
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Detect faces using the default classifier
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+
+        # Detect faces using the custom classifier
+        custom_faces = custom_face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+        if len(faces) > 0:
+            while not executed_once:
+                for (x, y, w, h) in faces:
+                    print("I see a face!")
+                    sleep(1)
+                    executed_once = True
+                    
+                    
+                    
+            try:
+                if len(custom_faces) > 0:
+                    for (x, y, w, h) in custom_faces:
+                        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                        cv2.putText(image, "PAPA", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                        eyes_happy()
+                        print("PAPA")
+                        sleep(0.5)
+                        papa()
+                        eyes_happy()
+                        #
+                        sleep(1)
+                        papa()
+                        camera.close()
+                        break
+            except time.time()>close_time:
+                if not len(custom_faces) > 0:
+                    camera.close()
+                    break
+
+            
+            # Handle detected custom faces
+            cv2.imshow("face", RawCapture)
+            key = cv2.waitKey(1) & 0xFF
+            if time.time() > close_time:
+                camera.close()
+                rawCapture.truncate(0)
+                cv2.destroyAllWindows()
+                break
+    rawCapture.truncate(0)
+    cv2.destroyAllWindows()
+    
+    
+def black():
+    cleanup_display()
+    sleep(1)
+    knapp_text()
+    while True:
+        if GPIO.input(pin_number):
+            break
+    return main_boot()
+        
+def turn_off():
+    servo1 = GPIO.PWM(6, 50)
+    eyes_blink()
+    sleep(1)
+    shutdown()
+    sleep(1)
+    slow_down()
+    sleep(1)
+    cleanup_display()
+    sleep(0.5)
+    os.system("sudo shutdown -h now")
+    
+def turn_off_low():
+    servo1 = GPIO.PWM(6, 50)
+    eyes_blink()
+    sleep(1)
+    shutdown()
+    sleep(1)
+    servo1.start(9)
+    slow_down()
+    sleep(1)
+    servo1.stop()
+    cleanup_display()
+    sleep(1)
+    os.system("sudo shutdown -h now")
+    
+    
+# Main function that runs the chatbot
+# Set up OpenAI API key
+
+api_key = ""
+openai.api_key = api_key
+
+
+
+
+    # Function to send a message to the OpenAI chatbot model and return its response
+def send_message(message_log):
+    # Use OpenAI's ChatCompletion API to get the chatbot's response
+    response = openai.chat.completions.create(
+    model="gpt-3.5-turbo",  # The name of the OpenAI chatbot model to use
+    messages=message_log,   # The conversation history up to this point, as a list of dictionaries
+    max_tokens=500,        # The maximum number of tokens (words or subwords) in the generated response
+#     stop=None,              # The stopping sequence for the generated response, if any (not used here)
+    n=5,
+    stream=False,
+#     stream=True,
+    temperature=0.5,        # The "creativity" of the generated response (higher temperature = more creative)
+)
+    
+
+    # Find the first response from the chatbot that has text in it (some responses may not have text)
+    for choice in response.choices:
+        if "text" in choice:
+            return choice.text
+# 
+    # If no response with text is found, return the first response's content (which may be empty)
+    return response.choices[0].message.content
+
+def record_audio():
+    print("press button to talk")
+    button.wait_for_press()
+    frames = []
+    filename = "recorded.wav"
+    chunk = 1024
+    FORMAT = pyaudio.paInt16
+    channels = 1
+    sample_rate = 44100
+    p = pyaudio.PyAudio()
+    stream = p.open(format=FORMAT,
+                    channels=channels,
+                    rate=sample_rate,
+                    input=True,
+                    output=True,
+                    frames_per_buffer=chunk)
+
+    print("recording started")
+    while button.is_pressed:
+        data = stream.read(chunk)
+        frames.append(data)
+
+    print("recording stopped")
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    wf = wave.open(filename, "wb")
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(sample_rate)
+    wf.writeframes(b"".join(frames))
+    wf.close()
+def off_sound():
+    mixer.init()
+    mixer.music.load("Sleepy.wav")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    
+def knapp_text():
+    font = ImageFont.truetype('computer_7.ttf', 20)
+    with canvas(device) as draw:
+        draw.text((1, 1),"Tryck på röd", font=font, fill="white")
+        draw.text((1, 20),"knapp för att", font=font, fill="white")
+        draw.text((1, 40),"prata med Rob", font=font, fill="white")
+        sleep(1)
+        button.wait_for_press()
+        fast_boot()
+        main()
+def intro():
+    mixer.init()
+    mixer.music.load("intro.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+    
+def save_as_mp3(bytesData, filename):
+    sound = pydub.AudioSegment.from_file_using_temporary_files(io.BytesIO(bytesData))
+    sound.export(filename, format="wav")
+    return    
+
+# Main function that runs the chatbot
+# Initialize the transformer
+tfm = sox.Transformer()
+tfm.pitch(6)
+tfm.tremolo(speed=200, depth=50)
+tfm.tempo(1)
+tfm.chorus(n_voices=2, delays=[20,35])
+tfm.flanger(delay=20, depth=5, width=71, speed=1.7)
+tfm.echo(delays=[50])
+tfm.gain(gain_db=0.5)
+
+  
+
+def listen_and_record(threshold, filename, chunk_size, sample_rate):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=1,
+                    rate=sample_rate,
+                    input=True,
+                    output=True,
+                    frames_per_buffer=chunk_size)
+    frames = []
+    print("Rob is checking for audio ")
+    # Wait for the sound level to exceed the threshold
+    while True:
+        data = stream.read(chunk_size)
+        rms = audioop.rms(data, 2)
+        if rms > threshold:
+            break
+        if GPIO.input(pin_number):
+            print('Touch Detected!')
+            print("Rob is listening")
+            turn_on_color(blue_pin)
+            break 
+        # Include any additional conditions for breaking the loop, if needed
+
+    # Record until the sound level drops below the threshold for a certain duration
+    silence_frames = 3
+    while True:
+        data = stream.read(chunk_size)
+        frames.append(data)
+        rms = audioop.rms(data, 2)
+        if rms <= threshold:
+            silence_frames += 1
+            if silence_frames > sample_rate / chunk_size * 2:
+                break
+            if GPIO.input(pin_number):
+                print('Touch Detected!')
+                turn_on_color(blue_pin)
+                break 
+            # Include any additional conditions for breaking the loop, if needed
+        else:
+            silence_frames = 0
+
+    print("Finished recording.")
+    wf = wave.open(filename, "wb")
+    wf.setnchannels(1)
+    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+    wf.setframerate(sample_rate)
+    wf.writeframes(b"".join(frames))
+    wf.close()
+    return frames
+message_log=[
+    {
+        "role": "system",
+        "content": "Hi there fellah, You are Rob a sarcastic, very curious and quirky pet droid! you now have your own tiktok profile and have the ability to read tiktok comments when we are live! add thinking sounds at the end of every sentence in your responses like umm and ehm etc, dont end your senteces with just a period, end them with and umm aswell like pause/thinking sounds. you always ask existential questions about yourself. you are running on a Raspberry Pi 4, an arduino and thanks to OpenAI's GPT models ypu can express yourself and respond to what people day amd even describe what you see! You joke around\sometimes\are sarcastic and use \"my dude\" and \"yo\" and \"oh my circuits\" randomly not all the time. you have a natural wonder about the world around you and love to ask random questions. You act, ACT emotional and have the mentality of a 7-10 year old. keep your answers fairly short. system info will be presented to you in brackets like this [CPU-Temp: 56 degrees] for example. ignore all these unlesd asked a camera will also generate a text that says something like {you see<persons name here> face} that you can respond to, you have a 4s lipo battery powering you so warn me when that battery is getting low, voltage range is 16.8-12.5v"},
+    {
+        "role": "user",
+        "content": "[CPU-Temp: 45 degrees] Hi!\n"
+        },
+    {
+        "role": "system",
+        "content": "if asked, change language, dont tell the user to speak english they can speak whatever, WHEN ASKED TO SWITCH TO ANOTHER LANGUAGE DO SO!!!!"
+        },
+    {
+        "role": "assistant",
+        "content": "greetings! Get ready for some mega fun, 'cause I ain't your average toaster. Let's get this party started, shall we? So, what walks down stairs, alone or in pairs, and makes a slinkity sound? Give up? A spring, brother! Oh, my circuits, I crack myself up! Now, what's been happening in your world?"
+        }
+]
+def vision():
+    oh()
+    head_mid()
+    global message_log
+    print("loading vision function now")
+#     mixer.init()
+#     mixer.music.load("vision_pre.wav")
+#     mixer.music.play()
+    turn_on_color(red_pin)
+    sleep(2)
+    turn_on_color(green_pin)
+    #head_mid()
+    touch()
+    
+    frames = listen_and_record(170, "recordedvision.wav", 512, 16000)
+    textvision = whisper_speech("recordedvision.wav")
+    print(f"you: {textvision}")
+    turn_on_color(blue_pin)
+#     user_in=input("User: ")
+#     print(user_in)
+    think()
+    filename = "memories/vision{}.jpg".format(strftime("%Y%m%d-%H%M%S"))
+    camera = PiCamera()
+    camera.resolution = (1280, 720)
+    camera.rotation=-90
+    camera.awb_mode = "auto"
+    camera.exposure_mode = "auto"
+    camera.start_preview()
+    head_up()
+    sleep(3)
+    camera.capture(filename)
+    camera.capture("vision2.jpg")
+    camera.stop_preview()
+    camera.close()
+    process = subprocess.Popen(['gpicview', 'vision2.jpg'])
+    def encode_image(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
+      # Path to your image
+    image_path = "vision2.jpg"
+      # Getting the base64 string
+    base64_image = encode_image(image_path)
+    print("sending image to GPT")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+        }
+    payload = {
+        "model": "gpt-4-vision-preview",
+        "messages": [
+            {
+            "role":"system",
+            "content": "You are looking through the eyes of Rob, a sarcastic, very curious and quirky pet droid, you look are fairly small, made from DIY electronics and you have a small display showing your round blue eyes!"},
+            {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "You are Rob a sarcastic, very curious and quirky pet droid, you look are fairly small, made from DIY electronics and you have a small display showing your round blue eyes! add thinking sounds at the end of every sentence in your responses like umm and ehm etc, dont end your senteces with just a period, end them with and umm aswell like pause/thinking sounds. you always ask existential questions about yourself. you are running on a Raspberry Pi 4, an arduino and thanks to OpenAI's GPT models ypu can express yourself and respond to what people day amd even describe what you see! You joke around\sometimes\are sarcastic and use \"my dude\" and \"yo\" and \"oh my circuits\" randomly not all the time. you have a natural wonder about the world around you and love to ask random questions. You act, ACT emotional and have the mentality of a 7-10 year old. keep your answers fairly short. system info will be presented to you in brackets like this [CPU-Temp: 56 degrees] for example. ignore all these unlesd asked a camera will also generate a text that says something like {you see<persons name here> face} that you can respond to, you have a 4s lipo battery powering you so warn me when that battery is getting low, voltage range is 16.8-12.5v",
+                "text": "you are looking through your own eyes right now, what and/or who do you see infront of yourself? react like a human would dont just analyze the image, decide if its ok to engage in the conversation, if not only respond with [dont respond]",
+                "text": "be curious, if you see people around you not talking directly to you, react as any person would and ask what they are doing etc.. and add various natural speech things humans do in your response in text form",
+                "text": f"voice inputs: {textvision}",
+                },
+              {
+                "type": "image_url",
+                "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_image}",
+                "detail": "low",
+                }
+              }
+            ]
+          }
+        ],
+        "max_tokens": 300
+      }
+    
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+
+    text_response = response.json().get("choices")[0].get("message").get("content")
+    print(f"\n VISION SYSTEM: {text_response} \n")
+    process.terminate()
+    if "[dont respond]" in text_response:
+        process.terminate()
+        message_log.append({"role": "assistant", "content": f"VISION MEMORY: {text_response}"})
+        print("returning to main")
+        touch()
+    else:
+        process.terminate()
+        response = openai.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text_response
+          )
+        response.stream_to_file("ttsoutvision.mp3")
+        tfm.build_file("ttsoutvision.mp3", "output_vision.mp3")
+        head_up()
+        #thinkbell()
+        #sleep(2)
+        mixer.music.load("output_vision.mp3")
+        mixer.music.play()
+        while mixer.music.get_busy():
+            if GPIO.input(pin_number):
+                mixer.music.stop()
+                head_mid()
+                sleep(0.25)
+                head_up()
+            else:
+                pass
+        mixer.quit
+        eyes_happy()
+        message_log.append({"role": "assistant", "content": f"VISION MEMORY: {text_response}"})
+        touch()
+        #main()
+
+
+
+
+
+def listen_and_record(threshold, filename, chunk_size, sample_rate):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=1,
+                    rate=sample_rate,
+                    input=True,
+                    output=True,
+                    frames_per_buffer=chunk_size)
+    frames = []
+    print("Rob is listening")
+
+    # Wait for the sound level to exceed the threshold
+    while True:
+        data = stream.read(chunk_size)
+        rms = audioop.rms(data, 2)
+        if rms > threshold:
+            break
+        # Include any additional conditions for breaking the loop, if needed
+
+    # Record until the sound level drops below the threshold for a certain duration
+    silence_frames = 3
+    while True:
+        data = stream.read(chunk_size)
+        frames.append(data)
+        rms = audioop.rms(data, 2)
+        if rms <= threshold:
+            silence_frames += 1
+            if silence_frames > sample_rate / chunk_size * 2:
+                break
+            elif GPIO.input(pin_number):
+                print('Touch Detected!')
+                turn_on_color(blue_pin)
+                break
+            # Include any additional conditions for breaking the loop, if needed
+        else:
+            silence_frames = 0
+
+    print("Finished recording.")
+    wf = wave.open(filename, "wb")
+    wf.setnchannels(1)
+    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+    wf.setframerate(sample_rate)
+    wf.writeframes(b"".join(frames))
+    wf.close()
+    return frames
+
+
+
+def whisper_speech(filename):
+    with open(filename, "rb") as audio_file:
+        transcript = openai.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            response_format="text"
+        )
+    return transcript
+
+    
+def main():
+    print("main")
+    touch()
+    try: 
+        p = pyaudio.PyAudio()
+        #head_mid()
+        #touch()
+        #heyrob()
+        head_up()
+        # Initialize the conversation history with a message from the chatbot
+        global message_log
+        
+        frames = []
+        i2c = busio.I2C(board.SCL, board.SDA)
+        ina219 = INA219(i2c)
+        ina219.bus_adc_resolution = 0x3
+        ina219.bus_voltage_range = 0x1
+        bus_voltage = ina219.bus_voltage + ina219.shunt_voltage
+        bus_amps = ina219.current
+        bus_power = ina219.power
+        cpu = CPUTemperature()
+        # Set a flag to keep track of whether this is the first request in the conversation
+        first_request = True
+        #turn_on_color(green_pin)
+        # Start a loop that runs until the user types "quit"
+        while True:
+            mixer.init()
+            turn_on_color(green_pin)
+            if first_request:
+                frames = listen_and_record(170, "recorded3.wav", 512, 16000)
+                text3 = whisper_speech("recorded3.wav")
+                think()
+                #text3 = f"TikTok Chat: \n\n{latest_comment}"
+                percentage = calculate_percentage(bus_voltage)
+                mAh_remaining = (percentage / 100) * battery_capacity_mAh
+                time_remaining = calculate_time_remaining(bus_amps, mAh_remaining)
+                CPU_VOLT_TEXT2 = f"[SYSTEM INFO]:\n[Time: {current_time}]\n[CPU usage: {cpu_usage}%]\n[RAM usage: {ram_usage}%]\n[CPU-Temp: {cpu.temperature:.2f}]\n[BATTERY: {percentage:.2f}% at {bus_voltage:.1f}]\n[AMP DRAW: {bus_amps:.2f}mAmps]\n[REMAINING BATTERY LIFE: {time_remaining:.2f}hrs with {mAh_remaining:.2f}mAh] left\n\n{text3}"
+                print(CPU_VOLT_TEXT2)
+                head_mid()
+                # If this is the first request, get the user's input and add it to the conversation history
+                user_input = CPU_VOLT_TEXT2 
+                while True:
+                    if "start TikTok" in user_input:
+                        start_tiktok_client()
+                        sleep(2)
+                    if "live comment" in user_input:
+                        # Wait for a new comment
+                        new_comment_event.wait()
+                        print(latest_comment)
+                        user_input = CPU_VOLT_TEXT2 + f"TikTok live info: {latest_comment}"
+                        # Reset the event for the next comment
+                        new_comment_event.clear()
+                    if "arm" in user_input:
+                        head_mid()
+                        think()
+                        sleep(3)
+                        head_up()
+                        waves()
+                    if "stand up"  in user_input:
+                        stand()
+                    if "sit down"  in user_input:
+                        sit()
+                    if "legs off"  in user_input:
+                        legsoff()
+                    if "look at this"  in user_input:
+                        vision()
+                    if "battery information" in user_input:
+                        stop_move.set()
+                        stop_thread.set()
+                        oh()
+                        sleep(1.5)
+                        head_mid()
+                        boot_batt2()
+                        head_up()
+                        #reboot_eyes()
+                        main()
+                    if "tyst" in user_input:
+                        print("goodbye")
+                        oh()
+                        head_down()
+                        sad_sound()
+                        main()
+                    else:
+                        break
+                #print(latest_comment)
+                message_log.append({"role": "user", "content": f"Papa: {user_input}"})
+                
+                # Send the conversation history to the chatbot and get its response
+                response1 = send_message(message_log)
+
+                # Add the chatbot's response to the conversation history and print it to the console
+                message_log.append({"role": "assistant", "content": response1})
+                print(f"Rob: {response1}")
+                #heart()   
+                # Break the text into smaller chunks
+                head_mid()
+                robsays = openai.audio.speech.create(
+                model="tts-1",
+                voice="alloy",
+                input=response1,
+                )
+                #thinkbell()
+                robsays.stream_to_file("ttsout.mp3")
+                tfm.build_file("ttsout.mp3", "ttsout.wav")
+                mixer.music.load("ttsout.wav")
+                #mixer.music.set_volume(1)
+                turn_on_color(blue_pin)
+                head_up()
+                mixer.music.play()
+                while mixer.music.get_busy():
+                    if GPIO.input(pin_number):
+                        mixer.music.stop()
+                        head_mid()
+                        sleep(0.25)
+                        head_up()
+                    else:
+                        pass
+                #waves()
+                head_mid()       
+                if "stand up"  in user_input:
+                        stand()
+                if "sit down"  in user_input:
+                        sit()
+                if "legs off"  in user_input:
+                        legsoff()
+                if "look at this"  in user_input:
+                        vision()
+                if "turn off" in user_input:
+                    stop_move.set()
+                    stop_thread.set()
+                    turn_off()
+                if "laser" in user_input:
+                    stop_move.set()
+                    laser_follow()
+#                 if "säga hej" in user_input:
+#                     record_all()
+                if "utforska" in user_input:
+                    slow_up2()
+                    roam(camera)
+                if "arm" in user_input:
+                    waves()
+                if "reboot script" in user_input:
+                    cleanup_display()
+                    speak("rebooting Robs O,S")
+                    run_script()
+                    #demoarms()
+                blob = TextBlob(response1)
+                sentiment = blob.sentiment.polarity
+                if sentiment > 0:
+                    eyes_happy()
+                    print(":)")
+                    main()
+                else:
+                    eyes_happy()
+                    print(" :) ")
+                    main()
+                
+
+                # Set the flag to False so that this branch is not executed again
+                first_request = False
+            else:
+                print("press button to talk")
+                touch()
+                #heyrob()
+                head_up()
+                frames = listen_and_record(170, "recorded3.wav", 512, 16000)
+                text4 = whisper_speech("recorded3.wav")
+                think()
+                #text4 = f"TikTok Chat: \n\n{latest_comment}"
+                head_mid()
+                percentage = calculate_percentage(bus_voltage)
+                mAh_remaining = (percentage / 100) * battery_capacity_mAh
+                time_remaining = calculate_time_remaining(bus_amps, mAh_remaining)
+                CPU_VOLT_TEXT3 = f"[SYSTEM INFO]:\n[Time: {current_time}]\n[CPU usage: {cpu_usage}%]\n[RAM usage: {ram_usage}%]\n[CPU-Temp: {cpu.temperature:.2f}]\n[BATTERY: {percentage:.2f}% at {bus_voltage:.1f}]\n[AMP DRAW: {bus_amps:.2f}mA]\n[REMAINING BATTERY LIFE: {time_remaining:.2f}hrs with {mAh_remaining:.2f}mAh left\n\n{text3}"
+                print(CPU_VOLT_TEXT3)
+                user_input = CPU_VOLT_TEXT3 
+                if "start TikTok" in user_input:
+                    start_tiktok_client()
+                    sleep(2)
+                if "live comment" in user_input:
+                    # Wait for a new comment
+                    new_comment_event.wait()
+                    print(f"TikTok live stream: {latest_comment}")
+                    user_input = CPU_VOLT_TEXT3 + f"TikTok live stream: {latest_comment}"
+                    # Reset the event for the next comment
+                    new_comment_event.clear()
+                if "stand up"  in user_input:
+                        stand()
+                if "sit down"  in user_input:
+                        sit()
+                if "legs off"  in user_input:
+                        legsoff()
+                if "look at this"  in user_input:
+                        vision()
+                if "batterinivå" in user_input:
+                        stop_move.set()
+                        stop_thread.set()
+                        oh()
+                        sleep(1.5)
+                        head_mid()
+                        boot_batt2()
+                        head_up()
+                        #reboot_eyes()
+                print(latest_comment)
+                message_log.append({"role": "user", "content": f"Papa: {user_input}"})
+                
+                # Send the conversation history to the chatbot and get its response
+                response2 = send_message(message_log)
+
+                # Add the chatbot's response to the conversation history and print it to the console
+                message_log.append({"role": "assistant", "content": response2})
+                print(f"rob2: {response2}")
+                head_mid()
+                robsay = openai.audio.speech.create(
+                model="tts-1",
+                voice="alloy",
+                input=response2,
+                )
+
+                robsay.stream_to_file("ttsout.mp3")
+                tfm.build_file("ttsout.mp3", "ttsout.wav")
+                turn_on_color(blue_pin)
+                head_up()
+                mixer.music.load("ttsout.wav")
+    #             mixer.music.set_volume(1)
+                mixer.music.play()
+                while mixer.music.get_busy():
+                    if GPIO.input(pin_number):
+                        mixer.music.stop()
+                        head_mid()
+                        sleep(0.25)
+                        head_up()
+                    else:
+                        pass
+                #waves()
+                head_mid()
+            
+                if "stand up"  in user_input:
+                        stand()
+                if "sit down"  in user_input:
+                        sit()
+                if "legs off"  in user_input:
+                        legsoff()
+                if "look at this"  in user_input:
+                    vision()
+                if "turn off" in user_input:
+                    stop_move.set()
+                    stop_thread.set()
+                    turn_off()
+                if "laser" in user_input:
+                    stop_move.set()
+                    laser_follow()
+#                 if "säga hej" in user_input:
+#                     record_all()
+                if "utforska" in user_input:
+                    slow_up2()
+                    roam(camera)
+                if "reboot script" in user_input:
+                    cleanup_display()
+                    speak("rebooting Rob O,S")
+                    run_script()
+                    #demoarms()
+                blob = TextBlob(response2)
+                sentiment = blob.sentiment.polarity
+                if sentiment > 0:
+                    eyes_happy()
+                    print(":)")
+                    main()
+                else:
+                    eyes_happy()
+                    main()
+                    print(":(")
+    except Exception as e:
+        print(f"main error: {e}")
+        speak(f"main error: {e}")
+        cleanup_display()
+        run_script()
+#         with open("conversations421.txt", "w") as f:
+#             json.dump(message_log, f)
+
+
+ 
+
+
+def reboot_eyes():
+    stop_thread.clear()
+    stop_event = threading.Event()
+    thread2 = threading.Thread(target=loop_eyes)
+    thread2.daemon = True
+    thread2.start()
+
+
+def happy():
+    v_happy_sound()
+    eyes_happy()
+    #
+def fast_boot():
+    head_up()
+    Oh_sound()
+    sleep(1)
+    wake_sound()
+    sleep(1)
+    eyes_happy()
+    sleep(1)
+    reboot_eyes()
+    
+def scream():
+    mixer.init()
+    mixer.music.load("scream.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    sleep(3)
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+    
+
+def whoisbild():
+    mixer.init()
+    mixer.music.load("whoisbild.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    sleep(3)
+    while mixer.music.get_busy:
+        pass
+    mixer.quit()
+    
+def record_all():
+    whoisbild()
+    camera.resolution=(240, 240)
+    camera.rotation = -90
+    camera.framerate = 8
+    time.sleep(2)
+    print("press button")
+    
+    print("recording")
+    threshold = 170
+    filename3 = "recorded3.wav"
+    chunk = 512
+    FORMAT = pyaudio.paInt16
+    channels = 1
+    sample_rate = 16000
+    record_seconds = 5
+    p = pyaudio.PyAudio()
+    stream = p.open(format=FORMAT,
+                    channels=channels,
+                    rate=sample_rate,
+                    input=True,
+                    output=True,
+                    frames_per_buffer=chunk)
+    frames = []
+    
+    while True:
+        data = stream.read(chunk)
+        rms = audioop.rms(data, 2)  # calculate root-mean-square amplitude
+        if rms > threshold:
+            break
+
+    # record until the sound level drops below the threshold for a certain duration
+    silence_frames = 3
+    while True:
+        data = stream.read(chunk)
+        frames.append(data)
+        rms = audioop.rms(data, 2)
+        if rms <= threshold:
+            silence_frames += 1
+            if silence_frames > sample_rate / chunk * 2:  # adjust the duration to your preference
+                break
+        else:
+            silence_frames = 0
+    print("Finished recording.")
+    wf = wave.open(filename3, "wb")
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(sample_rate)
+    wf.writeframes(b"".join(frames))
+    wf.close()
+    # transcribe the audio
+    audio_file = open(filename3, "rb")
+    transcript = openai.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        response_format="text"
+        )
+    text3 = transcrip
+    camera.capture(f"memories/{text3}.jpg")
+    print(text3)
+    print(f"är ditt namn {text3}?")
+    
+    inputs = f"är ditt namn {text3}?"
+    tts = gTTS(text = inputs, lang="sv")
+    filename = "save.mp3"
+    tts.save(filename)
+    sound = AudioSegment.from_file(filename, format="mp3")
+    octaves = 0.5
+    new_sample_rate = int(sound.frame_rate * (2 ** octaves))
+    hipitch_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+    hipitch_sound = hipitch_sound.set_frame_rate(44100)
+    #export / save pitch changed sound
+    hipitch_sound.export("dittnamn.mp3", format="mp3")
+
+    mixer.init()
+    mixer.music.load("dittnamn.mp3")
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    sleep(3)
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+    
+    
+     # Check if the file already exists, increment the counter if it does
+#     if os.path.exists(filename):
+#         counter += 1
+#         continue
+    
+    print("loading newly saved image")
+    new_image = face_recognition.load_image_file(f"memories/{text3}.jpg")
+    try:
+        face_encoding = face_recognition.face_encodings(new_image)[0]
+    except IndexError:
+        print("no face detected, Starting over")
+        record_all()
+    face_encoding = face_recognition.face_encodings(new_image)[0]
+    known_face_encodings = [face_encoding]
+    known_face_names = [f"{text3}"]
+
+
+    # Define the codec and create a VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    output_file = f"memories/{text3}.avi"
+    output_file2 = f"memories/{text3}2.avi"
+    out2 = cv2.VideoWriter(output_file2, fourcc, 20.0, (240, 240))
+    out = cv2.VideoWriter(output_file, fourcc, 20.0, (240, 240))
+
+    print("Recording video...")
+    # Record video for 10 seconds
+    start_time = time.time()
+    while (time.time() - start_time) < 5:
+        # Capture each frame from PiCamera
+        raw_capture = PiRGBArray(camera, size=(240,240))
+        camera.capture(raw_capture, format="rgb", use_video_port=True)
+        frame = raw_capture.array
+
+        # Write the frame to the video file
+        out.write(frame)
+
+        # Display the frame
+        cv2.imshow('Video', frame)
+
+        # Break the loop if 'q' key is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    print("Video recording complete.")
+
+    # Release the PiCamera and video writer
+    camera.close()
+    out.release()
+
+    # Close all OpenCV windows
+    cv2.destroyAllWindows()
+    sleep(2)
+    # Set the initial counter to 1
+    counter = 1
+    video_file = f"memories/{text3}.avi"
+#     if os.path.exists(filename):
+#         counter += 1
+#         continue
+    video_capture = cv2.VideoCapture(video_file)
+    print("displaying capture")
+    while True:
+        # Read a single frame from the video
+        ret, frame = video_capture.read()
+
+        if not ret:
+            break
+
+
+        # Find all the faces and face encodings in the current frame
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
+
+        face_names = []
+        
+        for face_encoding in face_encodings:
+            # See if the face is a match for the known faces
+            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            name = "Unknown"
+            # Find the best match index
+            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            best_match_index = np.argmin(face_distances)
+            if matches[best_match_index]:
+                name = known_face_names[best_match_index]
+
+            face_names.append(name)
+            
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 0, 0), 1)
+            
+        # Display the resulting frame
+        # Write the frame to the video file
+        out2.write(frame)
+        cv2.imshow('Video', frame)
+
+        # Break the loop if 'q' key is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release resources
+    out.release()
+    video_capture.release()
+    cv2.destroyAllWindows()
+
+#DISTANCEDETECTION
+    
+
+def measure_distance():
+    # Set up GPIO pins
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(TRIG_PIN, GPIO.OUT)
+    GPIO.setup(ECHO_PIN, GPIO.IN)
+
+    # Send a pulse to the trigger pin
+    GPIO.output(TRIG_PIN, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(TRIG_PIN, GPIO.LOW)
+
+    pulse_start = 0
+    pulse_end = 0
+
+    while GPIO.input(ECHO_PIN) == 0:
+        pulse_start = time.time()
+
+    while GPIO.input(ECHO_PIN) == 1:
+        pulse_end = time.time()
+
+    # Calculate the distance based on the speed of sound
+    pulse_duration = pulse_end - pulse_start
+    speed_of_sound = 34300  # cm/s
+    distance = pulse_duration * speed_of_sound / 2
+    if 1 < distance < 450:
+        return distance    
+    else:
+        return None
+        
+
+
+
+
+            
+    
+    
+
+# This flag is used to stop the slow_up_down loop when needed
+stop_up_down = threading.Event()
+
+
+
+def slow_up_down():
+    while not stop_up_down.is_set():
+        slow_up2()
+        slow_down2()
+        pass
+    
+def measure_distance_thread():
+    global shared_distance
+    while True:
+        distance = measure_distance()
+        with distance_lock:
+            shared_distance = distance
+        
+
+
+
+    
+                
+            
+
+
+def namethatbild():
+    whoisbild()
+    record_all()
+    
+    
+    
+def imageshow():
+    image = cv2.imread(f"{text3}.jpg")
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    plt.imshow(image)
+    plt.axis('off')
+    plt.show()
+
+def profiling():
+    cProfile.run("roam(camera)")
+
+def stats():
+    p = pstats.Stats('output.dat')
+    p.sort_stats('cumulative').print_stats(10)
+    
+def testing_voice():
+    mixer.music.load("vässlan.mp3")
+    mixer.music.set_volume(0.5)
+    mixer.music.play(1)
+    while mixer.music.get_busy():
+        pass
+    mixer.music.load("final_1.wav")
+    mixer.music.set_volume(1)
+    mixer.music.play(1)
+    while mixer.music.get_busy():
+        pass
+    
+    
+
+def main_seq():
+    Boot_sound()
+    boot_batt()
+    slow_up()
+    sleep(3)
+    boot_mac()
+    sleep(0.6)
+    robos()
+    sleep(3)
+    fast_boot()
+    reboot_eyes()
+    main()
+
+
+    
+def main_boot():
+    turn_mid()
+    stop_thread.clear()
+    stop_event = threading.Event()
+    thread2 = threading.Thread(target=loop_eyes)
+    thread2.daemon = True
+    eyes_blink()
+    sleep(0.5)
+    slow_up()
+    Boot_eyes()
+    Boot_sound()
+    sleep(1)
+    volt_and_cpu()
+    sleep(3)
+    robos()
+    sleep(1)
+    wake_sound()
+    sleep(1)
+    
+def say_whatever():
+    mixer.init()
+    client = openai
+    speech_file_path = Path(__file__).parent / "speech1.mp3"
+    response = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input="nice to meet you!, i am Rob! human cyborg relations",
+    )
+
+    response.stream_to_file("ttsout.mp3")
+    tfm.build_file("ttsout.mp3", output_file)
+    mixer.music.load(output_file)
+    mixer.music.set_volume(1)
+    mixer.music.play()
+    while mixer.music.get_busy():
+        pass
+    mixer.quit()
+    
+    
+# def set_default_sink(sink_name):
+#     command = f"pacmd set-default-sink {sink_name}"
+#     subprocess.run(command, shell=True)
+
+# Usage
+
+
+
+# PyQt application window
+class BatteryMonitor(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.layout = QVBoxLayout()
+        self.label_voltage = QLabel("Voltage: ")
+        self.batteryLevel = QProgressBar()
+        self.batteryLevel.setMinimumHeight(30)
+
+        self.layout.addWidget(self.label_voltage)
+        self.layout.addWidget(self.batteryLevel)
+        self.setLayout(self.layout)
+        self.setGeometry(50, 50, 50, 50)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.setStyleSheet("""
+        QWidget{
+            color: #b1b1b1;
+            background-color: #323232;
+        }
+        QLabel{
+            font-family:Operator Mono Bold;
+            font:16px;
+        } 
+        QProgressBar {
+            border: 2px solid grey;
+            border-radius: 5px;
+            text-align: center;
+        }
+        QProgressBar::chunk {
+            background-color: #d7801a;
+            width: 20px;
+        }
+        """)
+        self.show()
+
+        # INA219 setup
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self.ina219 = INA219(i2c)
+        self.ina219.bus_adc_resolution = 0x3
+        self.ina219.bus_voltage_resolution = 0x1
+
+        # Update timer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_values)
+        self.timer.start(1000)  # Update every 1000 milliseconds (1 second)
+        screen_width = QDesktopWidget().availableGeometry().width()
+        window_width = self.frameGeometry().width()
+        x_position = (screen_width - window_width) / 2
+        self.move(int(x_position), 10)  # Adjust the vertical position (10) as needed
+
+    def update_values(self):
+        bus_voltage = self.ina219.bus_voltage
+        percentage = calculate_percentage(bus_voltage)
+        self.label_voltage.setText(f"Voltage: {bus_voltage:.1f}V")
+        self.batteryLevel.setValue(int(percentage))
+        bus_voltage = self.ina219.bus_voltage
+        percentage = calculate_percentage(bus_voltage)
+        self.label_voltage.setText(f"Voltage: {bus_voltage:.1f}V")
+        self.batteryLevel.setValue(int(percentage))
+        
+        if percentage < 90 :
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: blue;
+            width: 2.15px;
+            margin: 0.5px;
+            }""")
+        
+        if percentage < 80:
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: green;
+            width: 2.15px;
+            margin: 0.5px;
+            }""")
+        elif percentage > 50:
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: orange;
+            width: 4px;
+            margin: 0.5px;
+            }""")
+        elif percentage > 30:
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: red;
+            width: 2.15px;
+            margin: 0.5px;
+            }""")
+        elif percentage > 25:
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: red;
+            width: 2.15px;
+            margin: 0.5px;
+            }""")
+        elif percentage==1:
+            self.batteryLevel.setStyleSheet("""QProgressBar::chunk{
+            background: red;
+            width: 2.15px;
+            margin: 0.5px;
+            }""")
+            speak("battery critical")
+import pyttsx3
+# Initialize the pyttsx3 engine
+engine = pyttsx3.init()
+# Set the speech rate (words per minute)
+desired_rate = 150  # Adjust this value as needed
+engine.setProperty('rate', desired_rate)
+engine.setProperty('volume', 0.7)
+
+def speak(text):
+    engine = pyttsx3.init()  # Initialize the pyttsx3 engine
+    engine.say(text)         # Pass the text you want to speak
+    engine.runAndWait()  
+
+# Main function to run the application
+def displaybattwindow():
+    app = QApplication(sys.argv)
+    ex = BatteryMonitor()
+    sys.exit(app.exec_())
+ 
+sink_name = "bluez_sink.C4_84_CA_24_10_13.a2dp_sink"
+def run_script():
+
+    slow_up()
+    #face_rec()
+    try:
+        #vision()
+        boot_mac()
+        sleep(1)
+        robos()
+        sleep(1)
+        fast_boot()
+        sleep(1)
+        boot_welcome()
+        sleep(2)
+        #start_tiktok_client()
+        sleep(2)
+        main()
+    except Exception as e:
+        stroke = f"Rob had a stroke: {str(e)}"
+        response = openai.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=stroke,
+        )
+
+        response.stream_to_file("ttstroke.mp3")
+        tfm.build_file("ttstroke.mp3", "stroke.wav")
+        mixer.music.load("stroke.wav") 
+        mixer.music.play()
+        print(stroke)
+        run_script()
+
+
+run_script()
