@@ -11,7 +11,6 @@ import sys
 from time import sleep
 from pygame import mixer
 mixer.init()
-import sox
 import busio
 import board
 from gpiozero import CPUTemperature
